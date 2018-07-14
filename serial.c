@@ -3,37 +3,14 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
+#include "help_methods.h"
 
 #define DAT_FILE "hollins.dat"
 #define MATRIX_FILE "matrix.dat"
 
-struct Options {
-    double tolerance;
-    int maxiter;
-    double* v;
-    double c;
-};
 
 struct timeval startwtime, endwtime;
 double seq_time;
-
-double norm(double* a1, int N){
-    double sum = 0;
-    for (int i = 0; i < N; ++i) {
-
-        double a = a1[i] * a1[i];
-        sum = sum + a;
-    }
-    return (sqrt(sum));
-}
-
-void subtract(double* a1, double* a2, int N, double * diff){
-
-    for (int i = 0; i < N; ++i) {
-        diff[i] = a1[i] - a2[i];
-    }
-}
-
 
 int main() {
 
@@ -89,7 +66,7 @@ int main() {
 //    FILE *fmatrix;
 //    fmatrix = fopen(MATRIX_FILE,"w");
 //    if (fmatrix == 0) {
-//        perror("failed to open input file\n");
+//        perror("failed to open output file\n");
 //        exit(EXIT_FAILURE);
 //    }
 //    for (i = 0; i < N; i ++){
@@ -193,8 +170,6 @@ int main() {
         }
     }
 
-    // TODO implement Gauss-Seidel method
-
     /**
      *  The rest of the computations are done using the transpose
      *  of array P.
@@ -203,14 +178,12 @@ int main() {
      */
 
     /** GAUSS - SEIDEL IMPLEMENTATION **/
-
-
     double* x = (double*)malloc(N* sizeof(double));
     // initializing x as the personalization vector
-    x = options.v;
-    // TODO THERE IS A PROBLEM HERE -> check all COPIES
+    for (i=0; i<N; i++){
+        x[i] = options.v[i];
+    }
     double* x_old = (double*)malloc(N* sizeof(double));
-
 
     // initialize delta
     double delta = 1;
@@ -221,12 +194,12 @@ int main() {
         }
     }
 
-
     // todo hist
     gettimeofday (&startwtime, NULL);
     double sigma;
     while (delta > options.tolerance && iter < options.maxiter){
 
+        /** gauss - seidel iteration **/
         for (i=0;i<N;i++){
             x_old[i] = x[i];
         }
