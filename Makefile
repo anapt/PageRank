@@ -17,7 +17,7 @@ EXECUTABLES = serial
 all: $(EXECUTABLES)
 
 serial: serial.c
-	$(CC) $< -o $@ $(CFLAGS)
+	$(CC) $< help_methods.c -o $@ $(CFLAGS)
 
 clean:
 	$(RM) *.o *~ $(EXECUTABLES)
