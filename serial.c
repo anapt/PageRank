@@ -1,7 +1,5 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <math.h>
 #include <sys/time.h>
 #include "help_methods.h"
 
@@ -89,7 +87,13 @@ int main() {
         temp[i] = (double)(1) / (double)(N);
     }
     options.v = temp;
-
+//
+//    for (i = 0; i < N; i ++){
+//        for (j = 0; j < N; j ++){
+//            printf("%f ", E[i][j]);
+//        }
+//        printf("\n");
+//    }
     /** d is the n-dimensional column vector identifying the nodes with outdegree 0 **/
     double* d = (double*)malloc(N* sizeof(double));
     /** normalize matrix && identify rows with outdegree 0 **/
@@ -98,14 +102,24 @@ int main() {
         for (j = 0; j < N; j++) {
             sum = sum + E[i][j];
         }
-        if (sum != 0){
+        if (sum > 0){
             for (j = 0; j < N; j++){
                 E[i][j] = (E[i][j] / sum);
             }
-        }else{
+        }else if (sum == 0){
             d[i] = 1;
         }
     }
+
+
+//    for (i = 0; i < N; i ++){
+//        for (j = 0; j < N; j ++){
+//            if (E[i][j] != 0){
+//                printf("%f ", E[i][j]);
+//            }
+//        }
+//        printf("\n");
+//    }
 
     /**
      * construct P' (transition possibility matrix) in the following manner
@@ -134,6 +148,7 @@ int main() {
             P[i][j] = E[i][j] + D[i][j];
         }
     }
+
 
     int flag = 0;
     for (i = 0; i < N; i ++) {
@@ -170,6 +185,15 @@ int main() {
         }
     }
 
+//    for (i = 0; i < N; i ++){
+//        for (j = 0; j < N; j ++){
+//
+//                printf("%f ", P[i][j]);
+//
+//        }
+//        printf("\n");
+//    }
+
     /**
      *  The rest of the computations are done using the transpose
      *  of array P.
@@ -188,15 +212,15 @@ int main() {
     // initialize delta
     double delta = 1;
     int iter = 0;
-    for (i=0; i<N; i++){
-        for (j=0; j<N; j++){
-            E[i][j]= -1*options.c*E[i][j];
-        }
-    }
+//    for (i=0; i<N; i++){
+//        for (j=0; j<N; j++){
+//            E[i][j]= -1*options.c*E[i][j];
+//        }
+//    }
 
-    // todo hist
     gettimeofday (&startwtime, NULL);
     double sigma;
+    double* diff = (double*)malloc(N* sizeof(double));
     while (delta > options.tolerance && iter < options.maxiter){
 
         /** gauss - seidel iteration **/
@@ -212,7 +236,9 @@ int main() {
             for (j=i+1; j < N; j++){
                 sigma = sigma + (P[j][i]*x_old[j]);
             }
-            x[i] = sigma;
+            // t=(x[i][X]-s)/x[i][i];
+            x[i] = (((1-options.c)/N) + (options.c * sigma));
+//            printf("%f %f \n", x[i], x_old[i]);
         }
         /** classic Pagerank **/
 //        for (i=0;i<N;i++){
@@ -223,7 +249,8 @@ int main() {
 //            x[i] = sum;
 //        }
 
-        double* diff = (double*)malloc(N* sizeof(double));
+
+
         subtract(x, x_old, N, diff);
         delta = norm(diff, N);
         printf("%f \n", delta); // nan
@@ -235,6 +262,9 @@ int main() {
                         + endwtime.tv_sec - startwtime.tv_sec);
     printf("Serial PageRank wall clock time = %f\n", seq_time);
 
+    for (i=0;i<N;i++){
+            printf("%f\n", x[i]);
+    }
 
     if (delta > options.tolerance || iter == options.maxiter){
         printf("Algorithm did not converged after %d iterations", iter);
