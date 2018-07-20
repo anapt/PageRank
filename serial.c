@@ -79,7 +79,6 @@ int main() {
     options.tolerance = 1.0e-7;
     options.maxiter = 500;
     options.c = 0.85;
-
     /** construct personalization vector v **/
     double* temp;
     temp = (double*)malloc(N* sizeof(double));
@@ -96,18 +95,23 @@ int main() {
 //    }
     /** d is the n-dimensional column vector identifying the nodes with outdegree 0 **/
     double* d = (double*)malloc(N* sizeof(double));
+    double* b = (double*)malloc(N* sizeof(double));
     /** normalize matrix && identify rows with outdegree 0 **/
     for (i = 0; i < N; i++){
         double sum = 0;
+        int count = 0;
         for (j = 0; j < N; j++) {
             sum = sum + E[i][j];
+            count = count +1;
         }
         if (sum > 0){
             for (j = 0; j < N; j++){
                 E[i][j] = (E[i][j] / sum);
             }
+            b[i] = count;
         }else if (sum == 0){
             d[i] = 1;
+            b[i] = 1;
         }
     }
 
@@ -126,6 +130,7 @@ int main() {
      * D = d*options.v_transpose
      * P' = P + D (here P = E)
      */
+
 
     /** allocate memory for P and D matrices **/
     double **P = (double **)malloc(N*sizeof(double *));
@@ -219,7 +224,7 @@ int main() {
 //    }
 
     gettimeofday (&startwtime, NULL);
-    double sigma;
+
     double* diff = (double*)malloc(N* sizeof(double));
     while (delta > options.tolerance && iter < options.maxiter){
 
@@ -228,26 +233,29 @@ int main() {
             x_old[i] = x[i];
         }
 
-        for (i = 0; i < N; i++){
-            sigma = 0;
-            for (j=0; j < i-1; j++){
-                sigma = sigma + (P[j][i]*x[j]);
-            }
-            for (j=i+1; j < N; j++){
-                sigma = sigma + (P[j][i]*x_old[j]);
-            }
-            // t=(x[i][X]-s)/x[i][i];
-            x[i] = (((1-options.c)/N) + (options.c * sigma));
-//            printf("%f %f \n", x[i], x_old[i]);
-        }
-        /** classic Pagerank **/
-//        for (i=0;i<N;i++){
-//            double sum=0;
-//            for (j=0; j < N; j++){
-//                sum = sum + P[j][i]*x_old[j];
+//        for (i = 0; i < N; i++){
+//            double sigma = 0;
+//            for (j=0; j < i-1; j++){
+//                sigma = sigma + P[j][i]*x[j];
 //            }
-//            x[i] = sum;
+//            for (j=i+1; j < N; j++){
+//                sigma = sigma + P[j][i]*x_old[j];
+//            }
+//
+////            x[i] = ((1- (options.c))/N)-((sigma));
+//            x[i] = (((1-options.c)/N) + (options.c * sigma));
+//
+////            printf("%f \n", 1/P[i][i]);
+////            printf("%f \n", ((1-options.c)/b[i] -(sigma)));
 //        }
+        /** classic Pagerank **/
+        for (i=0;i<N;i++){
+            double sum=0;
+            for (j=0; j < N; j++){
+                sum = sum + P[j][i]*x_old[j];
+            }
+            x[i] = sum;
+        }
 
 
 
@@ -261,9 +269,16 @@ int main() {
     seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
                         + endwtime.tv_sec - startwtime.tv_sec);
     printf("Serial PageRank wall clock time = %f\n", seq_time);
-
+    double sum1 = 0;
     for (i=0;i<N;i++){
-            printf("%f\n", x[i]);
+        sum1 = sum1 + x[i];
+//            printf("%f\n", x[i]);
+    }
+//    printf("sum %f \n", sum1);
+    double y = 1/sum1;
+    for (i=0;i<N;i++){
+
+        printf("%f\n", x[i]*y);
     }
 
     if (delta > options.tolerance || iter == options.maxiter){
