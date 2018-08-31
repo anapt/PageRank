@@ -1,6 +1,4 @@
-//gcc -Wall gauss-rap.c help_methods.c -o gauss -lm
-
-#include <omp.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -21,18 +19,21 @@ int main() {
 
     gettimeofday (&startwtime, NULL);
 
-    /** open the nodes file to obtain the number of nodes **/
+    /** =======================================================
+    *   Open dataset file to read NUM_OF LINES and NUM_OF_NODES  
+    *   =======================================================
+    **/
     FILE *f;
     f = fopen(DAT_FILE,"r");
     if (f == 0) {
-        perror("failed to open input file\n");
+        perror("[ERROR]: Failed to open input file\n");
         exit(EXIT_FAILURE);
     }
 
     fscanf(f,"%d",&NUM_OF_NODES);
     fscanf(f, "%d", &NUM_OF_LINES);
-    printf("Number of nodes: %d \n", NUM_OF_NODES);
-    printf("Number of lines: %d \n", NUM_OF_LINES);
+    printf("[INFO]: Number of nodes: %d \n", NUM_OF_NODES);
+    printf("[INFO]: Number of lines: %d \n", NUM_OF_LINES);
 
 
     /** ========================================== 
@@ -59,7 +60,7 @@ int main() {
     gettimeofday (&endwtime, NULL);
     seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
                         + endwtime.tv_sec - startwtime.tv_sec);
-    printf("Reading data wall clock time = %f\n", seq_time);
+    printf("[INFO]: Reading data wall clock time = %f\n", seq_time);
 
 
 
@@ -101,7 +102,7 @@ int main() {
         }
 
         if (sum > 0){
-            //normalize E matrix
+            // normalize E matrix
             for (j = 0; j < NUM_OF_NODES; j++){
                 E[i][j] /= sum;
             }
@@ -132,29 +133,10 @@ int main() {
         D[i] = (double *) malloc(NUM_OF_NODES * sizeof(double));
         P[i] = (double *) malloc(NUM_OF_NODES * sizeof(double));
         for (j = 0; j < NUM_OF_NODES; j++){
-            // D[i][j] = 0;
-            // P[i][j] = 0;
             D[i][j] = d[i] * options.v[j];
             P[i][j] = E[i][j] + D[i][j];
         }
     }
-
-
-    //check that sum of P lines is not zero
-    int flag = 0;
-    for (i = 0; i < NUM_OF_NODES; i++) {
-        double sum = 0;
-        for (j = 0; j < NUM_OF_NODES; j++) {
-            sum = sum + P[i][j];
-        }
-        if (sum == 0){
-            flag = 1;
-        }
-    }
-    if (flag == 1){
-        printf("ERROR \n");
-    }
-
 
     /** ======================================
     *   Construct irreducible Markov matrix P'
@@ -174,19 +156,24 @@ int main() {
     }
 
 
-    /**
+    /** =================================================================
      *  The rest of the computations are done using the transpose
      *  of array P.
      *  For simplicity and memory management we are using the same matrix
      *  and changing the sequence of indices
+     *  =================================================================
      */
 
 
-    /**
-     * We solve the following equation:
-     * ([I]NxN - (options.c)*P.transpose) * x = ((1-options.c)/N )* [1]N
-     * here : ([I]NxN - (options.c)*P.transpose) = K
+    /** =======================================================================
+     *  We solve the following equation:
+     *
+     *      ([I]NxN - options.c * P.transpose) * x = ((1-options.c) / N) * [1]N
+     *      
+     *   => K = ([I]NxN - (options.c) * P.transpose) = K
+     *  =======================================================================
      */
+
     double **K = (double **) malloc (NUM_OF_NODES * sizeof(double *));
     for (i=0; i < NUM_OF_NODES; i++) {
         K[i] = (double *) malloc(NUM_OF_NODES * sizeof(double));
@@ -202,18 +189,18 @@ int main() {
         }
     }
 
-    /************************************ 
+    /** =============================
     *   GAUSS - SEIDEL IMPLEMENTATION
-    *************************************/
+    *   =============================
+    */
 
-    // initializing x as the personalization vector
+    // initialize x as the personalization vector
     double* x = (double*) malloc(NUM_OF_NODES * sizeof(double));
     for (i=0; i<NUM_OF_NODES; i++){
         x[i] = options.v[i];
     }
     
     double* x_old = (double*) malloc(NUM_OF_NODES * sizeof(double));
-    double* diff = (double*) malloc(NUM_OF_NODES * sizeof(double));
 
     // initialize delta
     double delta = 1;
@@ -226,54 +213,59 @@ int main() {
         for (i=0; i<NUM_OF_NODES; i++){
             x_old[i] = x[i];
         }
+        
+        double sigma = 0;
 
         for (i = 0; i < NUM_OF_NODES; i++){
-            double sigma = 0;
+            sigma = 0;
 
-            
             for (j=0; j < i-1; j++) {
                 sigma += K[i][j]*x[j];
             }
-        
+
             for (j=i+1; j < NUM_OF_NODES; j++) {
                 sigma += K[i][j]*x_old[j];
             }
 
-            x[i] = (double)((((1 - options.c) / NUM_OF_NODES) - sigma));
+            x[i] = (double)((((1 - options.c) / NUM_OF_NODES) - sigma));            
+        }   
+
+        // calculate norm of diff = x-x_old vector
+        double sum = 0, diff = 0;
+        for (int i = 0; i < NUM_OF_NODES; ++i) {
+            diff = x[i] - x_old[i];
+            sum = sum + diff * diff;
         }
 
-        subtract(x, x_old, NUM_OF_NODES, diff);
-        delta = norm(diff, NUM_OF_NODES);
+        delta = sqrt(sum);
         iter++;
     }
-
 
     gettimeofday (&endwtime, NULL);
     seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
                         + endwtime.tv_sec - startwtime.tv_sec);
-    printf("Serial Gauss-Seidel PageRank wall clock time = %f\n", seq_time);
+    printf("[INFO]: Serial PageRank Gauss-Seidel wall clock time = %f\n", seq_time);
 
+    /* ===================================================
+    *  Write final personalization vector x into .txt file
+    *  ===================================================
+    */
+    f = fopen("./output/gauss.txt", "w");
 
-    double sum_final = 0;
-    for (i=0; i<NUM_OF_NODES; i++){
-        sum_final = sum_final + x[i];
-    }
-
-
-    // Write final personalization vector x into .txt file
-    f = fopen("./output/gaussOutput.txt", "w");
-    printf("Writing output file..\n");
+    printf("[INFO]: Writing output file..\n");
     for (i = 0; i < NUM_OF_NODES; i++) {
       fprintf(f, "%f\n", x[i]);
     }
+    
     fclose(f);
 
 
     if (delta > options.tolerance || iter == options.maxiter){
-        printf("Algorithm did not converged after %d iterations", iter);
+        printf("[INFO]: Algorithm did not converged after %d iterations", iter);
     }
     else {
-        printf("Converged after %d iterations. \n", iter);
+        printf("[INFO]: Converged after %d iterations. \n", iter);
     }
 
 }
+

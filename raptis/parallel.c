@@ -1,5 +1,3 @@
-//gcc -Wall openmp-rap.c help_methods.c -o parallel -lm -fopenmp
-
 #include <math.h>
 #include <omp.h>
 #include <stdio.h>
@@ -8,7 +6,7 @@
 #include "help_methods.h"
 
 #define DAT_FILE "hollins.dat"
-#define N_THREADS 16
+#define N_THREADS 4
 
 
 struct timeval startwtime, endwtime;
@@ -200,14 +198,11 @@ int main() {
 
     // initialize x as the personalization vector
     double* x = (double*) malloc(NUM_OF_NODES * sizeof(double));
+    double* x_old = (double*) malloc(NUM_OF_NODES * sizeof(double));
     for (i=0; i<NUM_OF_NODES; i++){
         x[i] = options.v[i];
     }
-    
-    double* x_old = (double*) malloc(NUM_OF_NODES * sizeof(double));
-    // double* diff = (double*) malloc(NUM_OF_NODES * sizeof(double));
 
-    // initialize delta
     double delta = 1;
     int iter = 0;
 
@@ -237,15 +232,16 @@ int main() {
                 sigma += K[i][j]*x_old[j];
             }
 
-            // #pragma omp critical
             x[i] = (double)((((1 - options.c) / NUM_OF_NODES) - sigma));
             
         }   
 
-        double sum = 0;
+        // calculate norm of diff = x-x_old vector
+        double sum = 0, diff = 0;
         #pragma omp parallel for num_threads(N_THREADS)
         for (int i = 0; i < NUM_OF_NODES; ++i) {
-            sum = sum + (x[i] - x_old[i]) * (x[i] - x_old[i]);
+            diff = x[i] - x_old[i];
+            sum = sum + diff * diff;
         }
 
         delta = sqrt(sum);
@@ -257,17 +253,16 @@ int main() {
                         + endwtime.tv_sec - startwtime.tv_sec);
     printf("[INFO]: Parallel PageRank wall clock time = %f\n", seq_time);
 
+
     /* ===================================================
     *  Write final personalization vector x into .txt file
     *  ===================================================
     */
-    f = fopen("./output/parallelOutput.txt", "w");
-
+    f = fopen("./output/parallel.txt", "w");
     printf("[INFO]: Writing output file..\n");
     for (i = 0; i < NUM_OF_NODES; i++) {
       fprintf(f, "%f\n", x[i]);
     }
-    
     fclose(f);
 
 
