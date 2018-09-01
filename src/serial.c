@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include "help_methods.h"
+#include "../helpers/help_methods.h"
 
-#define DAT_FILE "hollins.dat"
+#define DAT_FILE "./dataset/hollins.dat"
 
 
 struct timeval startwtime, endwtime;
@@ -250,7 +250,7 @@ int main() {
     *  Write final personalization vector x into .txt file
     *  ===================================================
     */
-    f = fopen("./output/gauss.txt", "w");
+    f = fopen("./output/serial.txt", "w");
 
     printf("[INFO]: Writing output file..\n");
     for (i = 0; i < NUM_OF_NODES; i++) {

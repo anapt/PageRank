@@ -3,7 +3,7 @@
 #include <math.h>
 
 #define PARALLEL_FILE "./output/parallel.txt"
-#define GAUSS_FILE "./output/gauss.txt"
+#define SERIAL_FILE "./output/serial.txt"
 
 #define N 6012
 
@@ -14,7 +14,7 @@ int main() {
     FILE *f_parallel, *f_gauss;
 
     f_parallel = fopen(PARALLEL_FILE,"r");
-    f_gauss = fopen(GAUSS_FILE,"r");
+    f_gauss = fopen(SERIAL_FILE,"r");
     if (f_gauss == 0 || f_parallel == 0) {
         perror("[ERROR]: Failed to open input files\n");
         exit(EXIT_FAILURE);

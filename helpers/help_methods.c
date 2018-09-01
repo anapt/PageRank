@@ -19,4 +19,3 @@ void subtract(double* a1, double* a2, int N, double * diff){
         diff[i] = a1[i] - a2[i];
     }
 }
-

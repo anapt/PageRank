@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include "help_methods.h"
+#include "../helpers/help_methods.h"
 
-#define DAT_FILE "hollins.dat"
+#define DAT_FILE "./dataset/hollins.dat"
 #define N_THREADS 4
 
 

@@ -1,12 +1,9 @@
-// gcc -Wall serial-rap.c help_methods.c -o serial -lm
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include "help_methods.h"
+#include "../helpers/help_methods.h"
 
-#define DAT_FILE "hollins.dat"
-#define MATRIX_FILE "matrix.dat"
+#define DAT_FILE "./dataset/hollins.dat"
 
 
 struct timeval startwtime, endwtime;
@@ -235,7 +232,7 @@ int main() {
     // }
 
     // Write final personalization vector x into .txt file
-    f = fopen("./output/serialOutput.txt", "w");
+    f = fopen("./output/classic.txt", "w");
     for (i = 0; i < NUM_OF_NODES; i++) {
       fprintf(f, "%f\n", x[i]);
     }
